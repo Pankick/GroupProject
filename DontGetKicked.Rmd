@@ -10,3 +10,12 @@ Data URL:  https://www.kaggle.com/c/DontGetKicked/data
 print("大家好")
 ```
 
+```{r}
+train <- read.csv(file = "data/training.csv", header = TRUE, sep = ",")
+head(train)
+```
+
+```{r}
+summary(train)
+```
+
