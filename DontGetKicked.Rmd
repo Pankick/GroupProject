@@ -1,0 +1,12 @@
+---
+title: "DontGetKicked"
+output: html_document
+---
+
+Data URL:  https://www.kaggle.com/c/DontGetKicked/data
+
+
+```{r}
+print("大家好")
+```
+
