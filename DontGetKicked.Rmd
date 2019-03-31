@@ -7,15 +7,88 @@ Data URL:  https://www.kaggle.com/c/DontGetKicked/data
 
 
 ```{r}
-print("大家好")
+rm(list = ls())
+library(tidyverse)
+library(ggplot2)
 ```
 
 ```{r}
 train <- read.csv(file = "data/training.csv", header = TRUE, sep = ",")
+glimpse(train)
+```
+
+First, let's start cleaning the data.
+Some variables are not very relevent at first look: 
+
+```{r}
+#Change purchase date to purchase year (or maybe we can just delete this variable)
+class(train$PurchDate)
+train$PurchDate <- as.Date(train$PurchDate, format = "%m/%d/%Y")
+train$PurchDate <- format(train$PurchDate, "%Y")
+train$PurchDate <- as.integer(train$PurchDate)
+class(train$PurchDate)
 head(train)
+colnames(train)[3] <- "PurchYear"
+
+```
+
+
+
+
+```{r}
+#clean transmission data
+levels(train$Transmission)
+train <- train%>%
+  mutate(Transmission = replace(Transmission, Transmission=="Manual", "MANUAL"))
+  
+train <- train%>%
+  filter(Transmission =="MANUAL"| Transmission =="AUTO")
+
+train$Transmission <- factor(train$Transmission)
 ```
 
 ```{r}
-summary(train)
+#check wheeltype (Delete NULL?)
+levels(train$WheelTypeID)
+table(train$WheelTypeID)
+
 ```
 
+```{r}
+#clean size
+levels(train$Size)
+table(train$Size)
+train<- train%>%
+  filter(Size!="NULL")
+train$Size <- factor(train$Size)
+```
+
+
+```{r}
+#Clean Nationality
+levels(train$Nationality)
+table(train$Nationality)
+train$Nationality <- factor(train$Nationality)
+```
+
+```{r}
+levels(train$TopThreeAmericanName)
+table(train$TopThreeAmericanName)
+train$TopThreeAmericanName <- factor(train$TopThreeAmericanName)
+```
+
+```{r}
+print(c("Number of NULLs in Model: ",nrow(train%>%
+  filter(Model=="NULL"))))
+print(c("Number of NULLs in SubModel: ",nrow(train%>%
+  filter(SubModel=="NULL"))))
+print(c("Number of NULLs in Trim: ",nrow(train%>%
+  filter(Trim=="NULL"))))
+print(c("Number of empty strings in Model: ",nrow(train%>%
+  filter(Model==""))))
+print(c("Number of empty strings in SubModel: ",nrow(train%>%
+  filter(SubModel==""))))
+print(c("Number of empty strings in Trim: ",nrow(train%>%
+  filter(Trim==""))))
+
+```
