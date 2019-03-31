@@ -7,15 +7,63 @@ Data URL:  https://www.kaggle.com/c/DontGetKicked/data
 
 
 ```{r}
-print("大家好")
+rm(list = ls())
+library(tidyverse)
+library(ggplot2)
 ```
 
 ```{r}
 train <- read.csv(file = "data/training.csv", header = TRUE, sep = ",")
-head(train)
+glimpse(train)
 ```
 
 ```{r}
-summary(train)
+#Change purchase date to purchase year (or maybe we can just delete this variable)
+class(train$PurchDate)
+train$PurchDate <- as.Date(train$PurchDate, format = "%m/%d/%Y")
+train$PurchDate <- format(train$PurchDate, "%Y")
+train$PurchDate <- as.integer(train$PurchDate)
+class(train$PurchDate)
+head(train)
+colnames(train)[3] <- "PurchYear"
+
+```
+
+
+
+```{r}
+#clean transmission data
+levels(train$Transmission)
+train <- train%>%
+  mutate(Transmission = replace(Transmission, Transmission=="Manual", "MANUAL"))
+  
+train <- train%>%
+  filter(Transmission =="MANUAL"| Transmission =="AUTO")
+
+train$Transmission <- factor(train$Transmission)
+```
+
+```{r}
+#check wheeltype (Delete NULL?)
+levels(train$WheelTypeID)
+table(train$WheelTypeID)
+
+```
+
+```{r}
+#check size
+levels(train$Size)
+table(train$Size)
+train<- train%>%
+  filter(Size!="NULL")
+train$Size <- factor(train$Size)
+```
+
+
+```{r}
+#Nationality
+levels(train$Nationality)
+table(train$Nationality)
+train$Nationality <- factor(train$Nationality)
 ```
 
