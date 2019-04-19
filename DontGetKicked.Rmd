@@ -120,5 +120,6 @@ train_modified <- train_modified[!(train_modified$MMRCurrentAuctionAveragePrice=
 sum(train_modified == "NULL")
 ```
 ```{r}
-write.csv(train_modified, file = "train_modified.csv")
+#train_modified <- train_modified[,-1]
+write.csv(train_modified, file = "train_modified.csv",row.names=FALSE)
 ```
