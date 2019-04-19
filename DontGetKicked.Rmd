@@ -22,7 +22,7 @@ First, let's start cleaning the data.
 Some variables are not very relevent at first look: 
 
 =======
->>>>>>> 75d1037db3068adddade370911af9f09351a39b1
+
 ```{r}
 #Change purchase date to purchase year (or maybe we can just delete this variable)
 class(train$PurchDate)
@@ -32,15 +32,9 @@ train$PurchDate <- as.integer(train$PurchDate)
 class(train$PurchDate)
 head(train)
 colnames(train)[3] <- "PurchYear"
-
 ```
 
 
-
-<<<<<<< HEAD
-
-=======
->>>>>>> 75d1037db3068adddade370911af9f09351a39b1
 ```{r}
 #clean transmission data
 levels(train$Transmission)
@@ -53,6 +47,7 @@ train <- train%>%
 train$Transmission <- factor(train$Transmission)
 ```
 
+
 ```{r}
 #check wheeltype (Delete NULL?)
 levels(train$WheelTypeID)
@@ -61,11 +56,10 @@ table(train$WheelTypeID)
 ```
 
 ```{r}
-<<<<<<< HEAD
+
 #clean size
-=======
 #check size
->>>>>>> 75d1037db3068adddade370911af9f09351a39b1
+
 levels(train$Size)
 table(train$Size)
 train<- train%>%
@@ -75,11 +69,11 @@ train$Size <- factor(train$Size)
 
 
 ```{r}
-<<<<<<< HEAD
+
 #Clean Nationality
-=======
+
 #Nationality
->>>>>>> 75d1037db3068adddade370911af9f09351a39b1
+
 levels(train$Nationality)
 table(train$Nationality)
 train$Nationality <- factor(train$Nationality)
