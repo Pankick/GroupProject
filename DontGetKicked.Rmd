@@ -98,5 +98,27 @@ print(c("Number of empty strings in SubModel: ",nrow(train%>%
   filter(SubModel==""))))
 print(c("Number of empty strings in Trim: ",nrow(train%>%
   filter(Trim==""))))
+print(c("Number of NULLs in Size: ",nrow(train%>%
+  filter(Size=="NULL"))))
 
+```
+```{r}
+train_modified <- train[,-c(8,9,10,14,27,28,29)]
+
+```
+```{r}
+install.packages("dummies")
+library(dummies)
+```
+
+
+```{r}
+#dummy(train_modified$, sep = "_")
+which(train_modified == "NULL", arr.ind = TRUE)
+train_modified <- train_modified[!(train_modified$MMRCurrentAuctionAveragePrice=="NULL" & train_modified$MMRCurrentAuctionCleanPrice=="NULL"),]
+
+sum(train_modified == "NULL")
+```
+```{r}
+write.csv(train_modified, file = "train_modified.csv")
 ```
