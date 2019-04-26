@@ -100,3 +100,44 @@ print(c("Number of empty strings in Trim: ",nrow(train%>%
   filter(Trim==""))))
 
 ```
+
+#split the data set
+```{r}
+set.seed(66)
+index <- sample(72969, 20000)
+training <- train[-index,]
+testing <- train[index,]
+```
+
+
+#Try SVM
+```{r}
+library(e1071)
+svm_tune <- tune(svm,                            # find a best set of parameters for the svm model           
+                 IsBadBuy~VehicleAge+VehBCost+VehOdo+WarrantyCost,         
+                 data = training,
+                 kernel="linear", 
+                 ranges = list(cost = 10^(-5:0)))
+```
+
+
+```{r}
+print(svm_tune)
+best_svm_mod <- svm_tune$best.model
+```
+
+
+```{r}
+testing$svm_pred_class <- predict(best_svm_mod, testing) 
+testing$svm_dv<-as.numeric(attr(predict(best_svm_mod, testing, decision.values = TRUE),"decision.values"))
+
+table(testing$IsBadBuy==test$logit_pred_class)
+```
+
+
+```{r}
+library(pROC)
+svm_roc<-roc(testing$IsBadBuy,testing$svm_dv,auc=TRUE)
+plot(svm_roc,print.auc=TRUE, col="red")
+```
+
