@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
+#Cleaning Part 1
+
 ```{r}
 #Load all training data
 train = read.csv('Data/training.csv')
@@ -100,7 +102,6 @@ cleaned$TopThreeAmericanName <- factor(cleaned$TopThreeAmericanName)
 #add premium
 names(cleaned)
 
-changetype(cleaned, label)
 for (i in 14:21){
   cleaned[,i] <- as.numeric(cleaned[,i])
 }
@@ -111,14 +112,11 @@ summary(cleaned$CostDiff)
 
 ```{r}
 #export cleaned data
-write.csv(cleaned, file = "Data/cleaned.csv")
+write.csv(cleaned, file = "Data/cleaned.csv", row.names=FALSE)
 ```
 
 
-#Part 2
-
-
-
+#Cleaning Part 2
 
 ```{r}
 read.csv("Data/cleaned.csv") -> cleaned
@@ -134,7 +132,7 @@ cleaned$PurchDay <- format(cleaned$PurchDate, format = '%d')
 cleaned$PurchYear <- as.factor(cleaned$PurchYear)
 cleaned$PurchMonth <- as.factor(cleaned$PurchMonth)
 cleaned$PurchDay <- as.factor(cleaned$PurchDay)
-cleaned[, -3] -> cleaned
+cleaned[, -2] -> cleaned
 head(cleaned)
 ```
 
@@ -172,14 +170,95 @@ for (mk in makelist){
   cleaned$Model[cleaned$Make==mk & cleaned$Model==names(modeltable)[4]] <- "MODEL4"
   cleaned$Model[cleaned$Make==mk & !cleaned$Model %in% c("MODEL1", "MODEL2", "MODEL3", "MODEL4")] <- "OTHER"
 }
-
+cleaned$Model <- as.factor(cleaned$Model)
 table(cleaned$Model)
 head(cleaned)
+table(cleaned$BYRNO)
+```
+
+```{r}
+# export cleaned data
+write.csv(cleaned, file = "Data/cleaned.csv", row.names=FALSE)
+```
+
+
+
+#Model: XGBoost
+
+```{r}
+# Prepration for Boosting
+library(xgboost)
+cleaned <- read.csv("Data/cleaned.csv")
+names(cleaned)
+#Convert categorical information to a numeric matrix format 
+c(2:8, 10:12, 21:22, 27:29) -> converting
+names(cleaned)[converting]
+cleaned$BYRNO <- as.character(cleaned$BYRNO)
+cleaned$VehYear <- as.character(cleaned$VehYear)
+cleaned$PurchYear <- as.character(cleaned$PurchYear)
+cleaned$PurchMonth <- as.character(cleaned$PurchMonth)
+cleaned$PurchDay <- as.character(cleaned$PurchDay)
+model.matrix(~Auction-1,cleaned) -> Auction
+model.matrix(~VehYear-1,cleaned) -> VehYear
+model.matrix(~Make-1,cleaned) -> Make
+model.matrix(~Model-1,cleaned) -> Model
+model.matrix(~Color-1,cleaned) -> Color
+model.matrix(~Transmission-1,cleaned) -> Transmission
+model.matrix(~WheelTypeID-1,cleaned) -> WheelTypeID
+model.matrix(~Nationality-1,cleaned) -> Nationality
+model.matrix(~Size-1,cleaned) -> Size
+model.matrix(~TopThreeAmericanName-1,cleaned) -> TopThreeAmericanName
+model.matrix(~BYRNO-1,cleaned) -> BYRNO
+model.matrix(~VNST-1,cleaned) -> VNST
+model.matrix(~PurchYear-1,cleaned) -> PurchYear
+model.matrix(~PurchMonth-1,cleaned) -> PurchMonth
+model.matrix(~PurchDay-1,cleaned) -> PurchDay
+
+data_numeric <- cbind(cleaned[, -converting], Auction, VehYear, Make, Model, Color, Transmission, WheelTypeID, Nationality, Size, TopThreeAmericanName, BYRNO, VNST, PurchYear, PurchMonth, PurchDay)
+
+data_matrix <- data.matrix(data_numeric)
+
+# Get the index for test and train split
+set.seed(666)
+index <- sample(72872, 50000)
+# training data
+train_data <- data_matrix[index, -1]
+train_label <- data_matrix[index, 1]
+# testing data
+test_data <- data_matrix[-index, -1]
+test_label <- data_matrix[-index, 1]
 
 ```
 
 ```{r}
-#export cleaned data
-write.csv(cleaned, file = "Data/cleaned.csv")
+# put our testing & training data into two seperates data matrix
+dtrain <- xgb.DMatrix(data = train_data, label= train_label)
+dtest <- xgb.DMatrix(data = test_data, label= test_label)
+
+# Finding distribution of positive and negative cases
+table(train_label) 
+
+# train a model using our training data
+boost_model <- xgboost(data = dtrain,
+                max.depth = 30,    
+                nround = 10, 
+                early_stopping_rounds = 3,
+                scale_pos_weight = 43895/6105, 
+                objective = "binary:logistic",
+                gamma = 1)
 ```
+
+
+```{r}
+# Testing
+#library(PRROC)
+pred <- predict(boost_model, dtest)
+ROC_graph <- roc.curve(scores.class0 = pred, weights.class0=test_label,
+                       curve=TRUE)
+plot(ROC_graph)
+#err <- mean(as.numeric(pred > 0.6) != test_label)
+#print(paste("test-error=", err))
+
+```
+
 
