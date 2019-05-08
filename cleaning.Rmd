@@ -1,0 +1,180 @@
+---
+title: "Cleaned"
+author: "XP"
+date: "5/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+#Load all training data
+train = read.csv('Data/training.csv')
+head(train)
+```
+
+```{r}
+droplist = c("PRIMEUNIT", "AUCGUART", "Trim", "VehicleAge", "RefId", "SubModel", "WheelType", "VNZIP1")
+cleaned <- train[, !(names(train) %in% droplist)]
+head(cleaned)
+names(cleaned)
+
+```
+
+
+```{r}
+cleaned$PurchDate <- as.Date(cleaned$PurchDate, format = "%m/%d/%Y")
+class(cleaned$PurchDate)
+```
+
+```{r}
+levels(cleaned$Auction)
+```
+
+```{r}
+nrow(is.na(cleaned$VehYear))
+```
+
+
+```{r}
+levels(cleaned$Make)
+cleaned$Make[cleaned$Make=='TOYOTA SCION'] = 'SCION'
+table(cleaned$Make)
+cleaned$Make <- factor(cleaned$Make)
+```
+
+```{r}
+length(levels(cleaned$Model))
+#table(cleaned$Model)
+#a = unique(train$Model)
+#a = strsplit(a, '')
+#a = unlist(a)
+#sort(table(a), decreasing = T)  
+```
+
+```{r}
+table(cleaned$Color)
+nrow(is.na(cleaned$Color))
+cleaned[cleaned$Color!="NOT AVAIL",] -> cleaned
+cleaned[cleaned$Color!="NULL",] -> cleaned
+factor(cleaned$Color) -> cleaned$Color
+```
+
+```{r}
+#clean transmission data
+levels(cleaned$Transmission)
+cleaned <- cleaned%>%
+  mutate(Transmission = replace(Transmission, Transmission=="Manual", "MANUAL"))
+  
+cleaned <- cleaned%>%
+  filter(Transmission =="MANUAL"| Transmission =="AUTO")
+
+cleaned$Transmission <- factor(cleaned$Transmission)
+```
+
+```{r}
+table(cleaned$Nationality)
+cleaned[cleaned$Nationality!="NULL",] -> cleaned
+cleaned$Nationality <- factor(cleaned$Nationality)
+```
+
+```{r}
+table(cleaned$Size)
+cleaned<- cleaned%>%
+  filter(Size!="NULL")
+cleaned$Size <- factor(cleaned$Size)
+```
+
+```{r}
+table(cleaned$TopThreeAmericanName)
+cleaned$TopThreeAmericanName <- factor(cleaned$TopThreeAmericanName)
+```
+
+```{r}
+#add premium
+names(cleaned)
+
+changetype(cleaned, label)
+for (i in 14:21){
+  cleaned[,i] <- as.numeric(cleaned[,i])
+}
+
+cleaned$CostDiff <-  cleaned$VehBCost - cleaned$MMRAcquisitionAuctionAveragePrice
+summary(cleaned$CostDiff)
+```
+
+```{r}
+#export cleaned data
+write.csv(cleaned, file = "Data/cleaned.csv")
+```
+
+
+#Part 2
+
+
+
+
+```{r}
+read.csv("Data/cleaned.csv") -> cleaned
+head(cleaned)
+```
+
+```{r}
+#Split year, month, day as three features
+cleaned$PurchDate <- as.Date(cleaned$PurchDate)
+cleaned$PurchYear <- format(cleaned$PurchDate, format = '%Y')
+cleaned$PurchMonth <- format(cleaned$PurchDate, format = '%m')
+cleaned$PurchDay <- format(cleaned$PurchDate, format = '%d')
+cleaned$PurchYear <- as.factor(cleaned$PurchYear)
+cleaned$PurchMonth <- as.factor(cleaned$PurchMonth)
+cleaned$PurchDay <- as.factor(cleaned$PurchDay)
+cleaned[, -3] -> cleaned
+head(cleaned)
+```
+
+```{r}
+#Narrow down model to its first word
+firstword <- function (x){
+  x <- as.character(x)
+  strsplit(x, " ")[[1]][1] -> word
+  word
+}
+
+cleaned$Model <- sapply(cleaned$Model, firstword)
+head(cleaned)
+```
+
+```{r}
+ table(cleaned$Make)
+```
+
+```{r}
+#Delete HUMMER and PLYMOUTH since there are only 1 and 2 cars from these two brands.
+cleaned[!cleaned$Make %in% c("HUMMER", "PLYMOUTH"),] -> cleaned
+table(cleaned$Make)
+```
+
+```{r}
+#Decrease the category of model from each brand to its top 4 model plus other model.
+levels(cleaned$Make) -> makelist
+for (mk in makelist){
+    table(cleaned$Model[cleaned$Make==mk]) -> modeltable
+  modeltable[order(modeltable,decreasing = T)] -> modeltable
+  cleaned$Model[cleaned$Make==mk & cleaned$Model==names(modeltable)[1]] <- "MODEL1"
+  cleaned$Model[cleaned$Make==mk & cleaned$Model==names(modeltable)[2]] <- "MODEL2"
+  cleaned$Model[cleaned$Make==mk & cleaned$Model==names(modeltable)[3]] <- "MODEL3"
+  cleaned$Model[cleaned$Make==mk & cleaned$Model==names(modeltable)[4]] <- "MODEL4"
+  cleaned$Model[cleaned$Make==mk & !cleaned$Model %in% c("MODEL1", "MODEL2", "MODEL3", "MODEL4")] <- "OTHER"
+}
+
+table(cleaned$Model)
+head(cleaned)
+
+```
+
