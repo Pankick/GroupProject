@@ -240,25 +240,30 @@ table(train_label)
 
 # train a model using our training data
 boost_model <- xgboost(data = dtrain,
-                max.depth = 30,    
+                max.depth = 22,    
                 nround = 10, 
+                eta = 0.3,
                 early_stopping_rounds = 3,
                 scale_pos_weight = 43895/6105, 
                 objective = "binary:logistic",
-                gamma = 1)
+                gamma = 12)
 ```
 
 
 ```{r}
-# Testing
+# Testing with AUC
 #library(PRROC)
 pred <- predict(boost_model, dtest)
 ROC_graph <- roc.curve(scores.class0 = pred, weights.class0=test_label,
                        curve=TRUE)
 plot(ROC_graph)
-#err <- mean(as.numeric(pred > 0.6) != test_label)
-#print(paste("test-error=", err))
-
+err <- mean(as.numeric(pred > 0.88) != test_label)
+print(paste("test-error=", err))
+table(c(test_label,train_label))
+8950/(63922+8950)
 ```
 
+```{r}
+
+```
 

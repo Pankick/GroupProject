@@ -1,6 +1,5 @@
 # GroupProject
 
-Huifeng just joined.
 
 Group project for DSBI class
 Instruction for group project 
