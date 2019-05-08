@@ -178,3 +178,8 @@ head(cleaned)
 
 ```
 
+```{r}
+#export cleaned data
+write.csv(cleaned, file = "Data/cleaned.csv")
+```
+
