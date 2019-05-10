@@ -162,7 +162,7 @@ table(cleaned$Make)
 #Decrease the category of model from each brand to its top 4 model plus other model.
 levels(cleaned$Make) -> makelist
 for (mk in makelist){
-    table(cleaned$Model[cleaned$Make==mk]) -> modeltable
+  table(cleaned$Model[cleaned$Make==mk]) -> modeltable
   modeltable[order(modeltable,decreasing = T)] -> modeltable
   cleaned$Model[cleaned$Make==mk & cleaned$Model==names(modeltable)[1]] <- "MODEL1"
   cleaned$Model[cleaned$Make==mk & cleaned$Model==names(modeltable)[2]] <- "MODEL2"
@@ -192,7 +192,7 @@ cleaned <- read.csv("Data/cleaned.csv")
 names(cleaned)
 #Convert categorical information to a numeric matrix format 
 c(2:8, 10:12, 21:22, 27:29) -> converting
-names(cleaned)[converting]
+#names(cleaned)[converting]
 cleaned$BYRNO <- as.character(cleaned$BYRNO)
 cleaned$VehYear <- as.character(cleaned$VehYear)
 cleaned$PurchYear <- as.character(cleaned$PurchYear)
@@ -240,30 +240,44 @@ table(train_label)
 
 # train a model using our training data
 boost_model <- xgboost(data = dtrain,
-                max.depth = 22,    
-                nround = 10, 
-                eta = 0.3,
-                early_stopping_rounds = 3,
-                scale_pos_weight = 43895/6105, 
+                max.depth = 20,    
+                nround = 500, 
+                eta = 0.11,
+                early_stopping_rounds = 10,
+                #scale_pos_weight = 43895/6105, 
                 objective = "binary:logistic",
-                gamma = 12)
+                eval_metric = "auc",
+                gamma = 11)
 ```
+
 
 
 ```{r}
 # Testing with AUC
-#library(PRROC)
+library(PRROC)
 pred <- predict(boost_model, dtest)
 ROC_graph <- roc.curve(scores.class0 = pred, weights.class0=test_label,
                        curve=TRUE)
 plot(ROC_graph)
-err <- mean(as.numeric(pred > 0.88) != test_label)
+err <- mean(as.numeric(pred > 0.5) != test_label)
 print(paste("test-error=", err))
-table(c(test_label,train_label))
-8950/(63922+8950)
+#table(c(test_label,train_label))
+#8950/(63922+8950)
 ```
 
-```{r}
 
+# Neurual Network
+```{r}
+set.seed(666)
+index <- sample(72872, 50000)
+library(neuralnet)
+training <- data_numeric[index, ]
+testing <- data_numeric[-index, ]
+n <- names(training)
+n <- gsub(" ", "", x=n, )
+f
+f <- as.formula(paste("IsBadBuy ~", paste(n[!n %in% "IsBadBuy"], collapse = " + ")))
+nn <- neuralnet(f, data=training, hidden=5, act.fct = "logistic", 
+                linear.output = FALSE)
 ```
 

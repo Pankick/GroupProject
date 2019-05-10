@@ -1,0 +1,112 @@
+---
+title: "SVM&RF"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+cleaned <- read.csv("Data/cleaned.csv")
+set.seed(999)   # set a random seed 
+cleaned$IsBadBuy <- as.factor(cleaned$IsBadBuy)
+index <- sample(nrow(cleaned), nrow(cleaned)*0.2) # random selection of indices. 
+test <-cleaned[index,]       # save 20% as a test dataset
+training <-cleaned[-index,]   # save the rest as a training set
+```
+
+##logit regression
+###using all variables
+```{r}
+logit_training_model<-glm(IsBadBuy~.,family="binomial",data=training)
+summary(logit_training_model)
+```
+```{r}
+
+test$logit_pred_prob<-predict(logit_training_model,test,type="response")
+test$logit_pred_class<-ifelse(test$logit_pred_prob>0.5,"1","0") 
+
+table(test$IsBadBuy==test$logit_pred_class)
+```
+
+### using selected variables
+```{r}
+logit2<-glm(IsBadBuy~VehYear+VehOdo+Size+BYRNO+VehBCost+WarrantyCost+PurchYear,family="binomial",data=training)
+summary(logit2)
+```
+
+
+```{r}
+test$logit2_pred_prob<-predict(logit2,test,type="response")
+test$logit2_pred_class<-ifelse(test$logit2_pred_prob>0.5,"1","0") 
+
+table(test$IsBadBuy==test$logit2_pred_class)
+
+```
+
+12825/14574=88.00%
+
+
+## Tree
+### full tree
+
+```{r}
+library(rpart)
+library(rpart.plot)
+full_tree<-rpart(IsBadBuy~.,    
+                data=training,              
+                method="class",                 
+                control=rpart.control(cp=0))
+```
+
+```{r}
+printcp(full_tree)
+```
+```{r}
+plotcp(full_tree) 
+```
+
+```{r}
+min_xerror<-full_tree$cptable[which.min(full_tree$cptable[,"xerror"]),]
+min_xerror
+
+# prune tree with minimum cp value
+min_xerror_tree<-prune(full_tree, cp=min_xerror[1])
+```
+
+
+```{r}
+test$ct_pred_prob<-predict(min_xerror_tree,test)[,2]
+test$ct_pred_class=ifelse(test$ct_pred_prob>0.5,"1","0")
+table(test$ct_pred_class==test$IsBadBuy)
+table(test$IsBadBuy)
+```
+
+```{r}
+table(test$ct_pred_class,test$IsBadBuy, dnn=c("predicted","actual"))
+```
+
+
+
+
+## ROC
+
+```{r}
+library(pROC)
+ct_roc<-roc(test$IsBadBuy,test$ct_pred_prob,auc=TRUE)
+plot(ct_roc,print.auc=TRUE,print.auc.y=.3,col="blue")
+
+logit_roc<-roc(test$IsBadBuy,test$logit_pred_prob,auc=TRUE)
+plot(logit_roc,print.auc=TRUE,print.auc.y=.4, col="red",add=TRUE)
+
+logit_roc2<-roc(test$IsBadBuy,test$logit2_pred_prob,auc=TRUE)
+plot(logit_roc2,print.auc=TRUE,print.auc.y=.5, col="green",add=TRUE)
+```
+
+
+
+
+```
